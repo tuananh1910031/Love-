@@ -1,22 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>mua tinh yeu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mưa Tình Yêu</title>
     <style>
+      /* RESET & BASE */
+      html,
       body {
         margin: 0;
-        overflow: hidden;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
         background: black;
         perspective: 1000px;
         user-select: none;
       }
 
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
+
       #wrapper {
-        width: 100vw;
-        height: 100vh;
-        transform-style: preserve-3d;
+        width: 100%;
+        height: 100%;
         position: relative;
+        overflow: hidden;
+        transform-style: preserve-3d;
       }
 
       #scene {
@@ -32,21 +46,12 @@
         font-size: 1.5em;
         font-weight: bold;
         white-space: nowrap;
-        text-shadow: 0 0 10px #fff, 0 0 20px #f0f;
+        text-shadow: 0 0 30px #fff, 0 0 30px #f0f;
         animation: fall 12s linear infinite;
         opacity: 0.9;
         transform-origin: center;
       }
-      @media (max-width: 768px) {
-        .chu_noi {
-          font-size: 3.2em; 
-        }
-      
-        .img_fall {
-          width: 100px;
-          height: 100px;
-        }
-      }
+
       .trai_tim {
         position: absolute;
         width: 20px;
@@ -85,6 +90,8 @@
         animation: fallImg 15s linear infinite;
         opacity: 0.9;
         transform-origin: center;
+        max-width: 100%;
+        max-height: 100%;
       }
 
       @keyframes fall {
@@ -110,6 +117,17 @@
           transform: translateY(110vh) translateZ(var(--z)) rotateX(60deg)
             rotateY(-30deg);
           opacity: 0;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .chu_noi {
+          font-size: 1.25em;
+        }
+
+        .img_fall {
+          width: 100px;
+          height: 100px;
         }
       }
     </style>
@@ -151,7 +169,8 @@
         div.className = "chu_noi";
         div.innerText = msg;
 
-        const x = Math.random() * window.innerWidth;
+        const maxX = window.innerWidth - 120; // trừ để tránh tràn viền
+        const x = Math.random() * maxX;
         const z = Math.random() * 1000 - 500 + "px";
         const y = initial
           ? Math.random() * window.innerHeight + "px"
@@ -168,8 +187,10 @@
       function createHeart(initial = false) {
         const div = document.createElement("div");
         div.className = "trai_tim";
+        div.setAttribute("aria-hidden", "true");
 
-        const x = Math.random() * window.innerWidth;
+        const maxX = window.innerWidth - 40;
+        const x = Math.random() * maxX;
         const z = Math.random() * 1000 - 500 + "px";
         const y = initial
           ? Math.random() * window.innerHeight + "px"
@@ -186,9 +207,11 @@
       function createImage(initial = false) {
         const img = document.createElement("img");
         img.className = "img_fall";
+        img.setAttribute("aria-hidden", "true");
         img.src = images[Math.floor(Math.random() * images.length)];
 
-        const x = Math.random() * window.innerWidth;
+        const maxX = window.innerWidth - 100;
+        const x = Math.random() * maxX;
         const z = Math.random() * 1000 - 500 + "px";
         const y = initial
           ? Math.random() * window.innerHeight + "px"
@@ -202,32 +225,35 @@
         setTimeout(() => scene.removeChild(img), 15000);
       }
 
-      //  ban đầu
+      // Khởi tạo ban đầu
       for (let i = 0; i < 50; i++) {
         setTimeout(() => {
-          createText(
-            messages[Math.floor(Math.random() * messages.length)],
-            true
-          );
+          createText(messages[Math.floor(Math.random() * messages.length)], true);
           if (Math.random() < 0.3) createHeart(true);
           if (Math.random() < 0.2) createImage(true);
         }, i * 50);
       }
 
-      // Tạo hiệu ứng liên tục
+      // Hiệu ứng liên tục
       setInterval(() => {
         createText(messages[Math.floor(Math.random() * messages.length)]);
         if (Math.random() < 0.3) createHeart();
         if (Math.random() < 0.2) createImage();
       }, 300);
 
-      // Xoay chuột
+      // Tương tác xoay chuột
       let isDragging = false,
         lastX = 0,
         lastY = 0;
       let rotX = -18.6,
         rotY = 14.4;
       scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+
+      function updateRotation(dx, dy) {
+        rotY += dx * 0.3;
+        rotX -= dy * 0.3;
+        scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      }
 
       document.getElementById("wrapper").addEventListener("mousedown", (e) => {
         isDragging = true;
@@ -237,16 +263,30 @@
 
       window.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        rotY += dx * 0.3;
-        rotX -= dy * 0.3;
-        scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        updateRotation(e.clientX - lastX, e.clientY - lastY);
         lastX = e.clientX;
         lastY = e.clientY;
       });
 
       window.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      // Hỗ trợ cảm ứng trên mobile
+      document.getElementById("wrapper").addEventListener("touchstart", (e) => {
+        isDragging = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      });
+
+      window.addEventListener("touchmove", (e) => {
+        if (!isDragging) return;
+        updateRotation(e.touches[0].clientX - lastX, e.touches[0].clientY - lastY);
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      });
+
+      window.addEventListener("touchend", () => {
         isDragging = false;
       });
     </script>
